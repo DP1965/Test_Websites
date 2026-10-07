@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LTX — The world model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --retake-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --retake-slow-ease: cubic-bezier(0.65, 0, 0.35, 1);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Manrope', system-ui, sans-serif;
+  background: #000;
+  color: #fff;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+button { font-family: 'Manrope', system-ui, sans-serif; color: inherit; }
+a { color: inherit; text-decoration: none; }
+::selection { background: rgba(255,255,255,0.2); }
+:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+.sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* ---------- stage + media ---------- */
+.stage {
+  position: relative; isolation: isolate; width: 100%;
+  height: 100vh; height: 100dvh; overflow: hidden; background: #000;
+}
+.media {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center; z-index: 0; pointer-events: none;
+  visibility: hidden; background: transparent;
+}
+.media.on { visibility: visible; }
+
+/* ---------- header ---------- */
+.header {
+  position: absolute; top: 0; left: 0; width: 100%; z-index: 30;
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  padding: calc(58px + env(safe-area-inset-top)) 40px 40px;
+  text-shadow: 0 1px 6px rgb(0 0 0 / 0.18);
+}
+.logo { display: inline-flex; align-items: center; }
+.logo svg { height: 24px; width: auto; display: block; }
+.meta {
+  display: flex; align-items: center;
+  margin-left: clamp(48px, 5vw, 70px); gap: clamp(28px, 3vw, 44px);
+  font-size: 18px; line-height: 1.2; letter-spacing: -0.04em; white-space: nowrap;
+}
+.try {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 152px; height: 38px; border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.75); background: transparent; color: #fff;
+  font-size: 18px; line-height: 1; letter-spacing: -0.04em; white-space: nowrap;
+  transition: color 300ms, background-color 300ms, border-color 300ms;
+}
+.try:hover, .try:focus-visible { background: #fff; color: #0b1a26; border-color: #fff; text-shadow: none; }
+
+/* ---------- hero copy ---------- */
+.hero { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+.hero h1 {
+  position: absolute; margin: 0; top: 35.9%; left: 50%; transform: translateX(-50%);
+  width: min(901px, calc(100vw - 48px)); text-align: center;
+  font-size: clamp(62px, 6.8vw, 100px); font-weight: 500; line-height: 0.8;
+  letter-spacing: -0.04em; white-space: nowrap; text-shadow: 0 2px 12px rgb(0 0 0 / 0.14);
+}
+.hero h1 span {
+  display: inline-block;
+  transition: opacity 900ms var(--retake-ease), filter 900ms var(--retake-ease), transform 900ms var(--retake-ease);
+}
+.hero h1 span:nth-child(2) { transition-delay: 90ms; }
+.hero h1 span:nth-child(3) { transition-delay: 180ms; }
+.stage.title-hidden .hero h1 span { opacity: 0; filter: blur(12px); transform: translateY(-10px); }
+.hero p {
+  position: absolute; margin: 0; top: calc(46.78% + 94px); left: 50%; transform: translateX(-50%);
+  width: min(734px, calc(100vw - 48px)); text-align: center;
+  font-size: clamp(14px, 1.25vw, 18px); font-weight: 400; line-height: 1.2;
+  letter-spacing: -0.04em; text-shadow: 0 1px 8px rgb(0 0 0 / 0.16);
+}
+
+/* ---------- controller ---------- */
+.controller {
+  position: absolute; top: 46.78%; left: 50%; transform: translateX(-50%);
+  width: min(880px, calc(100vw - 48px)); height: 72px; z-index: 20;
+}
+.glass { position: absolute; border-radius: 999px; pointer-events: none; }
+.glass::before, .glass::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+}
+.glass::before {
+  background:
+    radial-gradient(120% 150% at var(--glass-x, 24%) var(--glass-y, 8%), rgb(255 255 255 / 0.25), rgb(255 255 255 / 0) 53%),
+    linear-gradient(115deg, rgb(255 255 255 / 0.10), rgb(255 255 255 / 0) 42%);
+}
+.glass::after {
+  inset: -1px; padding: 1px;
+  background: conic-gradient(from 225deg, #7fe3ff, rgb(255 255 255 / 0.35), #ffffff, #ffd7e6, rgb(255 255 255 / 0.35), #7fe3ff);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+
+.track {
+  top: 4px; left: 0; width: 100%; height: 64px;
+  background: rgb(24 55 82 / 0.31);
+  border: 1px solid rgb(255 255 255 / 0.2);
+  -webkit-backdrop-filter: blur(9px) saturate(126%) contrast(108%) brightness(103%);
+          backdrop-filter: blur(9px) saturate(126%) contrast(108%) brightness(103%);
+  box-shadow:
+    0 14px 38px rgb(4 24 43 / 0.16),
+    0 2px 7px rgb(4 24 43 / 0.1),
+    inset 1px 1px 0 rgb(255 255 255 / 0.48),
+    inset -1px -1px 0 rgb(21 49 73 / 0.14),
+    inset 0 0 0 0.5px rgb(255 255 255 / 0.16);
+  transition: left 980ms var(--retake-slow-ease), width 980ms var(--retake-slow-ease), opacity 400ms linear;
+}
+.track::after { opacity: 0.27; }
+
+.capsule {
+  top: -1px; height: 72px;
+  left: var(--cap-left, -5px); width: var(--cap-width, calc(20% + 5px));
+  background: rgb(246 251 255 / 0.24);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  -webkit-backdrop-filter: blur(13px) saturate(128%) contrast(107%) brightness(105%);
+          backdrop-filter: blur(13px) saturate(128%) contrast(107%) brightness(105%);
+  box-shadow:
+    0 11px 28px rgb(4 24 43 / 0.17),
+    0 2px 6px rgb(4 24 43 / 0.1),
+    inset 1px 1px 0 rgb(255 255 255 / 0.62),
+    inset -1px -1px 0 rgb(20 49 73 / 0.18),
+    inset 0 0 12px rgb(255 255 255 / 0.055);
+  transition: left 620ms var(--retake-ease), width 620ms var(--retake-ease),
+              background-color 980ms var(--retake-slow-ease), opacity 400ms linear;
+}
+.capsule::after { opacity: 0.30; }
+
+.controller[data-pos="0"] { --cap-left: -5px; --cap-width: calc(20% + 5px); }
+.controller[data-pos="1"] { --cap-left: 20%; --cap-width: 20%; }
+.controller[data-pos="2"] { --cap-left: 40%; --cap-width: 20%; }
+.controller[data-pos="3"] { --cap-left: 60%; --cap-width: 20%; }
+.controller[data-pos="4"] { --cap-left: 80%; --cap-width: calc(20% + 5px); }
+
+/* collapsed / selected */
+.controller.collapsed .track { left: calc(50% - 96px); width: 192px; }
+.controller.rear-hidden .track {
+  opacity: 0;
+  transition: left 980ms var(--retake-slow-ease), width 980ms var(--retake-slow-ease), opacity 400ms linear 650ms;
+}
+.controller.collapsed .capsule,
+.controller.expanding .capsule {
+  transition: left 980ms var(--retake-slow-ease), width 980ms var(--retake-slow-ease),
+              background-color 980ms var(--retake-slow-ease), opacity 400ms linear;
+}
+.controller.collapsed .capsule {
+  left: calc(50% - 100px); width: 200px; background: rgb(246 251 255 / 0.14);
+}
+
+.cells {
+  position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
+}
+.cell {
+  display: flex; align-items: center; justify-content: center; height: 100%;
+  margin: 0; padding: 0 14px; font-size: 23px; font-weight: 400; line-height: 1.2;
+  letter-spacing: -0.04em; white-space: nowrap; color: #fff; text-align: center;
+  background: transparent; border: 0; border-radius: 999px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+  transition: opacity 420ms var(--retake-ease), filter 420ms var(--retake-ease), transform 980ms var(--retake-slow-ease);
+}
+div.cell { cursor: default; pointer-events: none; }
+button.cell:disabled { cursor: default; color: #fff; }
+button.cell.notready { opacity: 0.4; }
+.controller.hl .cell.label { opacity: 0.5; transition: opacity 300ms var(--retake-ease); }
+
+.controller.collapsed .cell:not(.chosen) {
+  opacity: 0; filter: blur(10px); transform: scale(0.94); pointer-events: none;
+  transition: opacity 420ms var(--retake-ease), filter 420ms var(--retake-ease), transform 420ms var(--retake-ease);
+}
+.controller.expanding .cell:not(.chosen) {
+  transition: opacity 760ms var(--retake-ease) 60ms, filter 760ms var(--retake-ease) 60ms, transform 760ms var(--retake-ease) 60ms;
+}
+.cell.chosen.reset-out {
+  opacity: 0; filter: blur(8px);
+  transition: opacity 420ms var(--retake-ease), filter 420ms var(--retake-ease), transform 980ms var(--retake-slow-ease);
+}
+.cell.is-reset { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.cell.reveal { animation: reveal 520ms var(--retake-ease) both; }
+@keyframes reveal {
+  from { opacity: 0; filter: blur(10px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+/* ---------- notice ---------- */
+.notice {
+  position: absolute; z-index: 40; left: 50%; transform: translateX(-50%);
+  bottom: calc(24px + env(safe-area-inset-bottom)); max-width: calc(100vw - 32px);
+  display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 20px;
+  border-radius: 999px; font-size: 15px; letter-spacing: -0.02em;
+  background: rgb(24 55 82 / 0.55); border: 1px solid rgb(255 255 255 / 0.28);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.notice[hidden] { display: none; }
+.notice button {
+  min-height: 44px; padding: 0 20px; border-radius: 999px; cursor: pointer; font-size: 15px;
+  background: #fff; color: #0b1a26; border: 0;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .header { padding: calc(24px + env(safe-area-inset-top)) 24px 24px; }
+  .meta { font-size: 14px; gap: 22px; margin-left: 34px; }
+  .try { width: 116px; height: 36px; font-size: 14px; }
+  .cell { font-size: clamp(17px, 2.5vw, 24px); }
+}
+
+@media (max-width: 700px) {
+  .header { padding-left: 18px; padding-right: 18px; }
+  .logo svg { height: 21px; }
+  .meta { font-size: 12px; }
+  .meta span:last-child { display: none; }
+  .try { width: 92px; height: 34px; font-size: 13px; }
+  .try::after { content: ""; position: absolute; inset: -6px -10px; }
+  .hero h1 {
+    top: 34%; width: calc(100vw - 40px); font-size: clamp(48px, 14vw, 64px);
+    line-height: 0.88; white-space: normal;
+  }
+  .hero p { top: 77%; width: calc(100vw - 44px); font-size: 14px; }
+  .controller { top: 53%; width: calc(100vw - 40px); height: 156px; }
+  .track { top: 0; height: 156px; border-radius: 28px; }
+  .controller.collapsed .track { left: 0; width: 100%; }
+  .cells {
+    grid-template-columns: 1fr 1fr; grid-template-rows: 48px 54px 54px;
+    border-radius: 28px; overflow: hidden;
+  }
+  .cell { font-size: 17px; border-radius: 0; padding: 0 10px; }
+  .cell.label { grid-column: 1 / -1; }
+  .cell + .cell { border-top: 1px solid rgb(255 255 255 / 0.12); }
+  .cell:nth-child(3), .cell:nth-child(5) { border-left: 1px solid rgb(255 255 255 / 0.12); }
+  .controller.collapsed .cell { border-color: transparent; }
+  button.cell:active { background: rgb(255 255 255 / 0.10); }
+  button.cell:focus-visible { outline-offset: -3px; }
+  .capsule {
+    opacity: 0; pointer-events: none; left: 50%; top: 4vh; top: 4dvh;
+    transform: translate(-50%, -50%); width: 196px; height: 64px; border-radius: 999px;
+    transition: opacity 400ms linear, background-color 980ms var(--retake-slow-ease);
+  }
+  .controller.collapsed .capsule {
+    opacity: 1; left: 50%; width: 196px; background: rgb(246 251 255 / 0.18);
+    transition: opacity 400ms linear, background-color 980ms var(--retake-slow-ease);
+  }
+  .controller.expanding .capsule {
+    transition: opacity 400ms linear, background-color 980ms var(--retake-slow-ease);
+  }
+}
+
+@media (max-width: 700px) and (max-height: 700px) {
+  .controller { top: 50%; }
+  .hero p { top: calc(50% + 168px); width: calc(100vw - 32px); font-size: 13px; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .hero h1 { top: 20%; font-size: clamp(34px, 8vh, 56px); }
+  .controller { top: 50%; }
+  .hero p { top: auto; bottom: 8px; font-size: 13px; }
+}
+
+@media (max-width: 700px) and (max-height: 520px) and (orientation: landscape) {
+  .hero h1 { top: 12%; font-size: clamp(28px, 7vh, 44px); }
+  .controller { top: 46%; height: 118px; }
+  .track { height: 118px; }
+  .cells { grid-template-rows: 36px 41px 41px; }
+  .cell { font-size: 15px; }
+  .hero p { bottom: 6px; font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capsule, .track, .cell, .hero h1 span, .try {
+    transition-duration: 1ms !important; transition-delay: 0s !important;
+  }
+  .cell.reveal { animation-duration: 1ms; }
+  .stage.title-hidden .hero h1 span,
+  .controller.collapsed .cell:not(.chosen),
+  .cell.chosen.reset-out { filter: none; }
+}
+</style>
+</head>
+<body>
+<main class="stage" id="stage">
+  <video class="media" id="v1" src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-1.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="media" id="v1r" src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-1-reverse.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="media" id="v2" src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-2.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="media" id="v2r" src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-2-reverse.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="media" id="v3" src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-3.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="media" id="v3r" src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-3-reverse.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="media" id="v4" src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-4.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="media" id="v4r" src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-4-reverse.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+
+  <div class="hero">
+    <h1><span>The</span> <span>world</span> <span>model</span></h1>
+    <p>LTX builds open world models that give you full control, from production-grade video to systems that understand and operate in the physical world.</p>
+  </div>
+
+  <div class="controller" id="controller" role="group" aria-label="Scene state controller" data-pos="0">
+    <div class="glass track"></div>
+    <div class="glass capsule"></div>
+    <div class="cells">
+      <div class="cell label">Select state →</div>
+      <button type="button" class="cell" data-key="scene" disabled>Scene</button>
+      <button type="button" class="cell" data-key="light" disabled>Lighting</button>
+      <button type="button" class="cell" data-key="colorway" disabled>Clothing</button>
+      <button type="button" class="cell" data-key="fullLook" disabled>Cast</button>
+    </div>
+  </div>
+
+  <header class="header">
+    <a class="logo" href="#" aria-label="LTX home">
+      <svg viewBox="0 0 75 32" fill="#fff" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M0 0h6v26h14v6H0z"/>
+        <path d="M23 0h23v6h-10v26h-6V6H23z"/>
+        <path d="M48 0h7l5.5 10L66 0h7L64 16l9 16h-7l-5.5-10L55 32h-7l9-16z"/>
+      </svg>
+    </a>
+    <div class="meta"><span>LTX-2.5 is here</span><span>Smarter. Faster</span></div>
+    <a class="try" href="https://app.ltx.io/" target="_blank" rel="noopener noreferrer">Try now</a>
+  </header>
+
+  <div class="sr" id="status" role="status" aria-live="polite"></div>
+  <div class="notice" id="notice" hidden>
+    <span id="noticeText"></span>
+    <button type="button" id="retry">Retry</button>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var STALE = { stale: true };
+  var $ = function (id) { return document.getElementById(id); };
+
+  var stage = $('stage');
+  var ctrl = $('controller');
+  var statusEl = $('status');
+  var notice = $('notice');
+  var noticeText = $('noticeText');
+  var retryBtn = $('retry');
+
+  var vids = {};
+  var ids = ['v1', 'v1r', 'v2', 'v2r', 'v3', 'v3r', 'v4', 'v4r'];
+  var i;
+  for (i = 0; i < ids.length; i++) {
+    vids[ids[i]] = $(ids[i]);
+    vids[ids[i]].muted = true;
+  }
+
+  var CLIPS = {
+    scene:    { label: 'Scene',    f: 'v2', r: 'v2r', fd: 2.08, rd: 2.08, rg: 0.18 },
+    light:    { label: 'Lighting', f: 'v3', r: 'v3r', fd: 2.08, rd: 2.04, rg: 0.08 },
+    colorway: { label: 'Clothing', f: 'v1', r: 'v1r', fd: 2.08, rd: 2.08, rg: 0.08 },
+    fullLook: { label: 'Cast',     f: 'v4', r: 'v4r', fd: 3.00, rd: 2.48, rg: 0.08 }
+  };
+  var FWD_GUARD = 0.08;
+  var FRAME_TIMEOUT = 12000;
+  var keys = ['scene', 'light', 'colorway', 'fullLook'];
+
+  var btns = {}, btnIndex = {};
+  var btnEls = ctrl.querySelectorAll('button.cell');
+  for (i = 0; i < btnEls.length; i++) {
+    btns[btnEls[i].getAttribute('data-key')] = btnEls[i];
+    btnIndex[btnEls[i].getAttribute('data-key')] = i + 1;
+  }
+
+  /* ---------- state (refs, no per-frame rendering) ---------- */
+  var scene = 'base';         // base | scene | light | colorway | fullLook
+  var playback = 'loading';   // loading | ready | starting | playing | error
+  var direction = 'forward';
+  var locked = false;
+  var tok = 0;
+  var chosen = null;
+  var collapsedUI = false;
+  var visible = null;         // currently displayed <video>
+  var activeEl = null;
+  var pending = null;
+  var holdCancel = null;
+  var titleHidden = false;
+  var labelTimer = 0;
+  var pos = 0;
+  var hovering = false;
+  var lastAction = null;
+  var ready = {};
+  for (i = 0; i < ids.length; i++) { ready[ids[i]] = false; }
+
+  function announce(msg) { statusEl.textContent = ''; setTimeout(function () { statusEl.textContent = msg; }, 30); }
+
+  function setTitleVisible(show) {
+    titleHidden = !show;
+    stage.classList.toggle('title-hidden', !show);
+  }
+
+  function reveal(el) {
+    if (visible === el) { return; }
+    el.classList.add('on');
+    if (visible) { visible.classList.remove('on'); }
+    visible = el;
+  }
+
+  /* ---------- readiness ---------- */
+  function markReady(id) {
+    if (ready[id]) { return; }
+    ready[id] = true;
+    if (id === 'v1' && !visible && scene === 'base') {
+      try { vids.v1.pause(); } catch (e) {}
+      reveal(vids.v1);
+    }
+    updateButtons();
+    var all = true;
+    for (var k = 0; k < keys.length; k++) { if (!pairReady(keys[k])) { all = false; } }
+    if (all && playback === 'loading') { playback = 'ready'; announce('Controls ready.'); }
+  }
+  function pairReady(key) { return ready[CLIPS[key].f] && ready[CLIPS[key].r]; }
+  (function trackReadiness() {
+    ids.forEach(function (id) {
+      var v = vids[id];
+      if (v.readyState >= 2) { markReady(id); }
+      v.addEventListener('loadeddata', function () { markReady(id); });
+      v.addEventListener('canplay', function () { if (v.readyState >= 2) { markReady(id); } });
+      v.addEventListener('error', function () {
+        if (v === activeEl && locked) { fail(new Error('Media error'), tok); }
+        else { announce('A media clip failed to load.'); }
+      });
+    });
+  })();
+  announce('Loading scene clips.');
+
+  /* ---------- controller semantics ---------- */
+  function updateButtons() {
+    for (var k = 0; k < keys.length; k++) {
+      var key = keys[k], b = btns[key];
+      var isChosen = chosen === key;
+      var other = chosen !== null && !isChosen;
+      var dis;
+      if (chosen === null) { dis = locked || !pairReady(key); }
+      else if (isChosen) { dis = locked; }
+      else { dis = true; }
+      b.disabled = dis;
+      b.classList.toggle('notready', chosen === null && !pairReady(key));
+      if (other) {
+        b.setAttribute('tabindex', '-1');
+        if (collapsedUI) { b.setAttribute('aria-hidden', 'true'); } else { b.removeAttribute('aria-hidden'); }
+      } else {
+        b.removeAttribute('tabindex');
+        b.removeAttribute('aria-hidden');
+      }
+    }
+  }
+
+  function setPos(n) {
+    if (pos === n) { return; }
+    pos = n;
+    ctrl.setAttribute('data-pos', String(n));
+    ctrl.classList.toggle('hl', n > 0);
+  }
+  function focusVisible(b) {
+    try { return b.matches(':focus-visible'); } catch (e) { return true; }
+  }
+  function anyFocus() {
+    var a = document.activeElement;
+    return a && a.parentNode && a.parentNode.parentNode === ctrl && a.tagName === 'BUTTON' && focusVisible(a);
+  }
+  keys.forEach(function (key) {
+    var b = btns[key];
+    b.addEventListener('mouseenter', function () {
+      if (!locked && chosen === null && !b.disabled) { setPos(btnIndex[key]); }
+    });
+    b.addEventListener('focus', function () {
+      if (!locked && chosen === null && !b.disabled && focusVisible(b)) { setPos(btnIndex[key]); }
+    });
+    b.addEventListener('blur', function () { if (!hovering) { setPos(0); } });
+    b.addEventListener('click', function () {
+      if (chosen === key && scene === key) { onReset(); } else { onSelect(key); }
+    });
+  });
+  ctrl.addEventListener('mouseenter', function () { hovering = true; });
+  ctrl.addEventListener('mouseleave', function () { hovering = false; if (!anyFocus()) { setPos(0); } });
+  ctrl.addEventListener('pointermove', function (e) {
+    var r = ctrl.getBoundingClientRect();
+    if (!r.width || !r.height) { return; }
+    ctrl.style.setProperty('--glass-x', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+    ctrl.style.setProperty('--glass-y', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+  });
+
+  /* ---------- label travel ---------- */
+  function travelTransform(b) {
+    var prev = b.style.transform;
+    b.style.transform = '';
+    var cr = ctrl.getBoundingClientRect();
+    var br = b.getBoundingClientRect();
+    var tx, ty;
+    tx = cr.left + cr.width / 2;
+    if (window.matchMedia && window.matchMedia('(max-width: 700px)').matches) {
+      ty = cr.top + window.innerHeight * 0.04;
+    } else {
+      ty = cr.top + 35;
+    }
+    var dx = tx - (br.left + br.width / 2);
+    var dy = ty - (br.top + br.height / 2);
+    b.style.transform = prev;
+    return 'translate(' + Math.round(dx * 10) / 10 + 'px,' + Math.round(dy * 10) / 10 + 'px)';
+  }
+
+  function setChosenText(key, isReset, animate) {
+    var b = btns[key];
+    b.textContent = isReset ? 'Reset' : CLIPS[key].label;
+    b.classList.toggle('is-reset', isReset);
+    if (isReset) { b.setAttribute('aria-label', 'Reset to base scene'); } else { b.removeAttribute('aria-label'); }
+    b.classList.remove('reveal');
+    if (animate) {
+      void b.offsetWidth;
+      b.classList.add('reveal');
+      var done = function () { b.classList.remove('reveal'); b.removeEventListener('animationend', done); };
+      b.addEventListener('animationend', done);
+    }
+  }
+
+  function collapseUI(key) {
+    var b = btns[key];
+    chosen = key;
+    collapsedUI = true;
+    b.classList.add('chosen');
+    b.style.transform = travelTransform(b);
+    ctrl.classList.remove('expanding');
+    ctrl.classList.add('collapsed', 'rear-hidden');   // same recalc: rear fade rides CSS delay
+  }
+  function expandUI(key) {
+    var b = btns[key];
+    collapsedUI = false;
+    b.style.transform = '';
+    ctrl.classList.remove('collapsed', 'rear-hidden');
+    ctrl.classList.add('expanding');
+  }
+
+  window.addEventListener('resize', function () {
+    if (chosen && collapsedUI) {
+      var b = btns[chosen];
+      b.style.transition = 'none';
+      b.style.transform = travelTransform(b);
+      void b.offsetWidth;
+      b.style.transition = '';
+    }
+  });
+
+  /* ---------- player ---------- */
+  function seekZero(el) {
+    return new Promise(function (resolve, reject) {
+      if (el.currentTime <= 0.001) { resolve(); return; }
+      var t;
+      function on() { el.removeEventListener('seeked', on); clearTimeout(t); resolve(); }
+      el.addEventListener('seeked', on);
+      t = setTimeout(function () { el.removeEventListener('seeked', on); reject(new Error('Seek timed out')); }, 6000);
+      try { el.currentTime = 0; } catch (e) { reject(e); }
+    });
+  }
+
+  // Resolves once a freshly decoded frame from this request is showing. Never resolves on timeout.
+  function startClip(el, token) {
+    return new Promise(function (resolve, reject) {
+      var p = { done: false, gen: 0, timer: 0, vfc: null, raf: 0, cleanups: [] };
+      pending = p;
+
+      function cancelAttempt() {
+        clearTimeout(p.timer); p.timer = 0;
+        if (p.vfc !== null && el.cancelVideoFrameCallback) { try { el.cancelVideoFrameCallback(p.vfc); } catch (e) {} }
+        p.vfc = null;
+        cancelAnimationFrame(p.raf); p.raf = 0;
+        while (p.cleanups.length) { p.cleanups.pop()(); }
+      }
+      function finish(ok, err) {
+        if (p.done) { return; }
+        p.done = true; cancelAttempt();
+        if (pending === p) { pending = null; }
+        if (ok) { resolve(); } else { reject(err); }
+      }
+      p.abort = function () { if (!p.done) { p.done = true; cancelAttempt(); if (pending === p) { pending = null; } } };
+      p.suspend = function () {
+        p.gen++; cancelAttempt();
+        try { el.pause(); el.currentTime = 0; } catch (e) {}
+      };
+
+      function waitFrame() {
+        return new Promise(function (res) {
+          if (el.requestVideoFrameCallback) {
+            var cb = function (now, meta) {
+              p.vfc = null;
+              if (meta && meta.mediaTime <= 0.5 && el.readyState >= 2) { res(); return; }
+              p.vfc = el.requestVideoFrameCallback(cb);
+            };
+            p.vfc = el.requestVideoFrameCallback(cb);
+          } else {
+            var tick = function (n) {
+              p.raf = requestAnimationFrame(function () {
+                if (n > 1) { tick(n - 1); }
+                else if (el.readyState >= 2 && el.currentTime <= 0.5) { res(); }
+                else { tick(1); }
+              });
+            };
+            var onPlaying = function () { el.removeEventListener('playing', onPlaying); tick(2); };
+            el.addEventListener('playing', onPlaying);
+            p.cleanups.push(function () { el.removeEventListener('playing', onPlaying); });
+          }
+        });
+      }
+
+      p.attempt = function () {
+        if (p.done || document.hidden) { return; }
+        var gen = ++p.gen;
+        p.timer = setTimeout(function () { finish(false, new Error('First frame timed out')); }, FRAME_TIMEOUT);
+        try { el.pause(); } catch (e) {}
+        seekZero(el).then(function () {
+          if (p.done || gen !== p.gen) { return; }
+          var framePromise = waitFrame();          // register callback BEFORE play()
+          var playPromise = el.play();
+          return Promise.all([playPromise, framePromise]).then(function () {
+            if (p.done || gen !== p.gen) { return; }
+            finish(true);
+          });
+        }).then(null, function (err) {
+          if (p.done || gen !== p.gen) { return; }
+          finish(false, err);
+        });
+      };
+      p.attempt();
+    });
+  }
+
+  // Watch the ACTIVE video near its terminal frame; pause on it.
+  function holdClip(el, guard, fallbackDur, token, hideTitleAtStart) {
+    return new Promise(function (resolve, reject) {
+      var raf = 0, done = false;
+      function dur() { return (isFinite(el.duration) && el.duration > 0) ? el.duration : fallbackDur; }
+      function cleanup() {
+        done = true; cancelAnimationFrame(raf);
+        el.removeEventListener('ended', onEnd);
+        el.removeEventListener('timeupdate', check);
+        if (holdCancel === cleanup) { holdCancel = null; }
+      }
+      function finish() {
+        if (done) { return; }
+        cleanup();
+        try { el.pause(); } catch (e) {}
+        resolve();
+      }
+      function onEnd() { finish(); }
+      function check() {
+        if (done) { return; }
+        if (token !== tok) { cleanup(); reject(STALE); return; }
+        var t = el.currentTime, d = dur();
+        if (hideTitleAtStart && !titleHidden && t >= Math.min(d * 0.12, 0.9)) { setTitleVisible(false); }
+        if (t >= d - guard) { finish(); }
+      }
+      function loop() { if (done) { return; } check(); if (!done) { raf = requestAnimationFrame(loop); } }
+      holdCancel = cleanup;
+      el.addEventListener('ended', onEnd);
+      el.addEventListener('timeupdate', check);
+      loop();
+    });
+  }
+
+  function runClip(el, guard, fallbackDur, token, forward) {
+    activeEl = el;
+    return startClip(el, token).then(function () {
+      if (token !== tok) { throw STALE; }
+      reveal(el);
+      playback = 'playing';
+      return holdClip(el, guard, fallbackDur, token, forward);
+    });
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      if (pending) { pending.suspend(); }
+    } else {
+      if (pending) { pending.attempt(); }
+      else if (locked && activeEl && activeEl === visible && activeEl.paused && !activeEl.ended && playback === 'playing') {
+        var pp = activeEl.play(); if (pp && pp.catch) { pp.catch(function () {}); }
+      }
+    }
+  });
+
+  /* ---------- actions ---------- */
+  function hideNotice() { notice.hidden = true; }
+
+  function onSelect(key) {
+    if (locked || scene !== 'base' || chosen !== null || !pairReady(key)) { return; }
+    locked = true;                                   // synchronous lock
+    var token = ++tok;
+    var b = btns[key], clip = CLIPS[key];
+    var hadFocus = document.activeElement === b;     // capture BEFORE disabling
+    direction = 'forward'; playback = 'starting';
+    lastAction = { type: 'forward', key: key };
+    hideNotice();
+    setPos(0);
+    collapseUI(key);
+    updateButtons();
+    announce(clip.label + ' transition started.');
+
+    runClip(vids[clip.f], FWD_GUARD, clip.fd, token, true).then(function () {
+      if (token !== tok) { throw STALE; }
+      scene = key; locked = false; playback = 'ready';
+      setChosenText(key, true, true);
+      updateButtons();
+      if (hadFocus) { b.focus({ preventScroll: true }); }
+      announce(clip.label + ' selected. Reset is available.');
+    }).then(null, function (err) { fail(err, token); });
+  }
+
+  function onReset() {
+    if (locked || scene === 'base' || chosen === null) { return; }
+    locked = true;
+    var token = ++tok;
+    var key = chosen, b = btns[key], clip = CLIPS[key];
+    var hadFocus = document.activeElement === b;
+    direction = 'reverse'; playback = 'starting';
+    lastAction = { type: 'reverse', key: key };
+    hideNotice();
+    setPos(0);
+    b.classList.add('reset-out');
+    expandUI(key);                                   // bar opens in parallel with the clip
+    updateButtons();
+    clearTimeout(labelTimer);
+    labelTimer = setTimeout(function () {
+      if (token !== tok) { return; }
+      setChosenText(key, false, false);
+      b.classList.remove('reset-out');
+    }, 440);
+    announce('Resetting to base scene.');
+
+    runClip(vids[clip.r], clip.rg, clip.rd, token, false).then(function () {
+      if (token !== tok) { throw STALE; }
+      clearTimeout(labelTimer);
+      setChosenText(key, false, false);
+      b.classList.remove('reset-out', 'chosen');
+      ctrl.classList.remove('expanding');
+      scene = 'base'; chosen = null; locked = false; playback = 'ready';
+      setTitleVisible(true);
+      updateButtons();
+      if (hadFocus) { b.focus({ preventScroll: true }); }
+      announce('Base scene restored.');
+    }).then(null, function (err) { fail(err, token); });
+  }
+
+  function fail(err, token) {
+    if (err === STALE || token !== tok) { return; }
+    tok++;                                           // invalidate everything in flight
+    if (pending) { pending.abort(); }
+    if (holdCancel) { holdCancel(); }
+    if (activeEl && activeEl !== visible) {
+      try { activeEl.pause(); activeEl.currentTime = 0; } catch (e) {}
+    } else if (activeEl) {
+      try { activeEl.pause(); } catch (e2) {}
+    }
+    locked = false; playback = 'error';
+    clearTimeout(labelTimer);
+    var key = lastAction && lastAction.key;
+    if (key) {
+      var b = btns[key];
+      if (scene === 'base') {
+        // forward failed: reopen the bar, keep last valid frame
+        b.classList.remove('chosen', 'reset-out');
+        setChosenText(key, false, false);
+        expandUI(key);
+        chosen = null;
+        setTitleVisible(true);
+        setTimeout(function () { ctrl.classList.remove('expanding'); }, 1000);
+      } else {
+        // reverse failed: back to the selected state
+        b.classList.remove('reset-out');
+        collapseUI(key);
+        setChosenText(key, true, false);
+        setTitleVisible(false);
+      }
+    }
+    updateButtons();
+    noticeText.textContent = 'Something went wrong. The scene did not change.';
+    notice.hidden = false;
+    announce('Transition failed. Retry is available.');
+    retryBtn.focus({ preventScroll: true });
+  }
+
+  retryBtn.addEventListener('click', function () {
+    var a = lastAction;
+    hideNotice();
+    if (!a || locked) { return; }
+    if (a.type === 'forward' && scene === 'base') { onSelect(a.key); }
+    else if (a.type === 'reverse' && scene !== 'base') { onReset(); }
+  });
+})();
+</script>
+</body>
+</html>
